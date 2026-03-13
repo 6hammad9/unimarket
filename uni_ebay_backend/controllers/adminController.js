@@ -28,6 +28,7 @@ export const getUsers = async (req, res) => {
   try {
     const users = await User.find()
       .select('-password -verificationToken -resetPasswordToken')
+      .populate('university', 'name city country')
       .sort({ createdAt: -1 })
     res.json(users)
   } catch (err) {
@@ -96,10 +97,10 @@ export const editListing = async (req, res) => {
   try {
     const { title, description, price, category, sold } = req.body
     const listing = await Listing.findByIdAndUpdate(
-      req.params.id,
-      { title, description, price, category, sold },
-      { new: true }
-    )
+  req.params.id,
+  { title, description, price, category, sold },
+  { returnDocument: 'after' }
+)
     if (!listing) return res.status(404).json({ message: 'Listing not found' })
     res.json(listing)
   } catch (err) {
@@ -131,12 +132,13 @@ export const adminDeleteListing = async (req, res) => {
 }
 export const editUser = async (req, res) => {
   try {
-    const { name, email, phone, isVerified } = req.body
+    const { name, email, phone, isVerified, university } = req.body
     const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { name, email, phone, isVerified },
-      { new: true }
-    ).select('-password -verificationToken -resetPasswordToken')
+  req.params.id,
+  { name, email, phone, isVerified, university: university || null },
+  { returnDocument: 'after' }
+).select('-password -verificationToken -resetPasswordToken')
+  .populate('university', 'name city country')
 
     if (!user) return res.status(404).json({ message: 'User not found' })
     res.json(user)
