@@ -7,6 +7,8 @@ import listingRoutes from './routes/listings.js'
 import uploadRoutes from './routes/upload.js'
 import universityRoutes from './routes/universities.js'
 import adminRoutes from './routes/admin.js'
+import messageRoutes from './routes/messages.js'
+
 
 dotenv.config()
 
@@ -26,6 +28,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/listings', listingRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/universities', universityRoutes)
+app.use('/api/messages', messageRoutes)
 app.use('/api/admin', adminRoutes)
 
 const PORT = process.env.PORT || 5000

@@ -11,13 +11,16 @@ cloudinary.config({
 // Get stats
 export const getStats = async (req, res) => {
   try {
+    const Message = (await import('../models/Message.js')).default
+
     const totalUsers = await User.countDocuments()
     const verifiedUsers = await User.countDocuments({ isVerified: true })
     const totalListings = await Listing.countDocuments()
     const activeListings = await Listing.countDocuments({ sold: false })
     const soldListings = await Listing.countDocuments({ sold: true })
+    const unreadMessages = await Message.countDocuments({ isRead: false })
 
-    res.json({ totalUsers, verifiedUsers, totalListings, activeListings, soldListings })
+    res.json({ totalUsers, verifiedUsers, totalListings, activeListings, soldListings, unreadMessages })
   } catch (err) {
     res.status(500).json({ message: 'Server error' })
   }
