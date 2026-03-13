@@ -15,7 +15,7 @@ export default function Browse() {
 
   const category = searchParams.get('category') || 'all'
   const search = searchParams.get('search') || ''
-  const selectedUni = searchParams.get('university') || (user?.university || '')
+  const selectedUni = searchParams.get('university') || ''
   const selectedCity = searchParams.get('city') || ''
 
   useEffect(() => {
@@ -37,7 +37,12 @@ export default function Browse() {
         const params = {}
         if (category !== 'all') params.category = category
         if (search) params.search = search
-        if (selectedUni) params.university = selectedUni
+        if (selectedUni) {
+          params.university = selectedUni
+        } else if (!selectedCity && user?.university) {
+          // Default to user's university only if no other filter is active
+          params.university = user?.university?._id || user?.university
+        }
         if (selectedCity) params.city = selectedCity
 
         const res = await api.get('/listings', { params })
@@ -55,14 +60,20 @@ export default function Browse() {
     const next = new URLSearchParams(searchParams)
     if (value) next.set(key, value)
     else next.delete(key)
-    // Reset conflicting filters
     if (key === 'university') next.delete('city')
     if (key === 'city') next.delete('university')
     setSearchParams(next)
   }
 
-  // Get unique cities from universities
   const cities = [...new Set(universities.map(u => u.city))].sort()
+
+  const userUniId = user?.university?._id || user?.university || ''
+
+  const displayUniName = selectedUni
+    ? universities.find(u => u._id === selectedUni)?.name
+    : !selectedCity && userUniId
+    ? universities.find(u => u._id === userUniId)?.name
+    : null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -71,8 +82,8 @@ export default function Browse() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-semibold text-gray-900 mb-2">Browse listings</h1>
         <p className="text-gray-500 text-sm mb-8">
-          {selectedUni
-            ? `Showing listings from ${universities.find(u => u._id === selectedUni)?.name || 'your university'}`
+          {displayUniName
+            ? `Showing listings from ${displayUniName}`
             : selectedCity
             ? `Showing listings from ${selectedCity}`
             : 'Showing all listings'
@@ -90,9 +101,15 @@ export default function Browse() {
 
         {/* University / City filters */}
         <div className="flex flex-wrap gap-3 mb-4">
-          {/* All */}
+
+          {/* All universities */}
           <button
-            onClick={() => { updateParam('university', ''); updateParam('city', '') }}
+            onClick={() => {
+              const next = new URLSearchParams(searchParams)
+              next.delete('university')
+              next.delete('city')
+              setSearchParams(next)
+            }}
             className={`px-4 py-2 rounded-lg text-sm transition border ${
               !selectedUni && !selectedCity
                 ? 'bg-blue-600 text-white border-blue-600'
@@ -103,11 +120,11 @@ export default function Browse() {
           </button>
 
           {/* My university */}
-          {user?.university && (
+          {userUniId && (
             <button
-              onClick={() => updateParam('university', user.university)}
+              onClick={() => updateParam('university', userUniId)}
               className={`px-4 py-2 rounded-lg text-sm transition border ${
-                selectedUni === user.university
+                selectedUni === userUniId
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
               }`}
@@ -160,7 +177,9 @@ export default function Browse() {
 
         {/* Listings grid */}
         {loading ? (
-          <p className="text-center text-gray-400 py-20">Loading...</p>
+          <div className="flex items-center justify-center py-32">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-gray-400 mb-2">No listings found</p>
@@ -177,25 +196,29 @@ export default function Browse() {
               <Link
                 key={listing._id}
                 to={`/listings/${listing._id}`}
-                className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition"
+                className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition group"
               >
-                <div className="h-44 bg-gray-100 flex items-center justify-center">
+                <div className="h-44 bg-gray-100 flex items-center justify-center overflow-hidden">
                   {listing.images?.[0] ? (
-                    <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                    <img
+                      src={listing.images[0]}
+                      alt={listing.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
                   ) : (
                     <span className="text-gray-300 text-sm">No image</span>
                   )}
                 </div>
                 <div className="p-4">
                   <p className="font-medium text-gray-900 truncate mb-1">{listing.title}</p>
-                  <p className="text-blue-600 font-semibold text-sm mb-2">Rs {listing.price}</p>
+                  <p className="text-blue-600 font-semibold text-sm mb-2">Rs {listing.price.toLocaleString()}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full capitalize">
                       {listing.category}
                     </span>
-                    {listing.university && (
+                    {listing.university?.city && (
                       <span className="text-xs text-gray-400 truncate ml-2">
-                        {listing.university.city}
+                        📍 {listing.university.city}
                       </span>
                     )}
                   </div>
