@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import Admin from './pages/Admin'
+import Contact from './pages/Contact'
 
 
 
@@ -24,6 +25,10 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify/:token" element={<VerifyEmail />} />
+      <Route path="/contact" element={
+  <ProtectedRoute><Contact /></ProtectedRoute>
+} />
+
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/admin" element={

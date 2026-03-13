@@ -17,7 +17,7 @@ export default function Admin() {
   const [editingUni, setEditingUni] = useState(null)
   const [newUni, setNewUni] = useState({ name: '', city: '', country: '' })
   const [loading, setLoading] = useState(false)
-
+const [messages, setMessages] = useState([])
   const headers = { Authorization: `Bearer ${token}` }
 
   // Always fetch universities for the user edit dropdown
@@ -38,6 +38,7 @@ export default function Admin() {
     if (tab === 'users') fetchUsers()
     if (tab === 'listings') fetchListings()
     if (tab === 'universities') fetchUniversities()
+        if (tab === 'messages') fetchMessages()
   }, [tab])
 
   const fetchStats = async () => {
@@ -48,7 +49,45 @@ export default function Admin() {
       console.error(err)
     }
   }
+const fetchMessages = async () => {
+  setLoading(true)
+  try {
+    const res = await api.get('/messages', { headers })
+    setMessages(res.data)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
+  }
+}
 
+const handleMarkRead = async (id) => {
+  try {
+    const res = await api.put(`/messages/${id}/read`, {}, { headers })
+    setMessages(messages.map(m => m._id === id ? res.data : m))
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const handleMarkResolved = async (id) => {
+  try {
+    const res = await api.put(`/messages/${id}/resolve`, {}, { headers })
+    setMessages(messages.map(m => m._id === id ? res.data : m))
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const handleDeleteMessage = async (id) => {
+  if (!window.confirm('Delete this message?')) return
+  try {
+    await api.delete(`/messages/${id}`, { headers })
+    setMessages(messages.filter(m => m._id !== id))
+  } catch (err) {
+    console.error(err)
+  }
+}
   const fetchUsers = async () => {
     setLoading(true)
     try {
@@ -196,19 +235,24 @@ export default function Admin() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 flex-wrap">
-          {['stats', 'listings', 'users', 'universities'].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition capitalize ${
-                tab === t
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+         {['stats', 'listings', 'users', 'universities', 'messages'].map((t) => (
+  <button
+    key={t}
+    onClick={() => setTab(t)}
+    className={`px-5 py-2 rounded-lg text-sm font-medium transition capitalize flex items-center gap-2 ${
+      tab === t
+        ? 'bg-blue-600 text-white'
+        : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
+    }`}
+  >
+    {t}
+    {t === 'messages' && stats?.unreadMessages > 0 && (
+      <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+        {stats.unreadMessages}
+      </span>
+    )}
+  </button>
+))}
         </div>
 
         {/* Stats */}
@@ -537,7 +581,68 @@ export default function Admin() {
             )}
           </div>
         )}
-
+{tab === 'messages' && (
+  <div>
+    {loading ? (
+      <p className="text-gray-400 text-center py-10">Loading...</p>
+    ) : messages.length === 0 ? (
+      <p className="text-gray-400 text-center py-10">No messages yet.</p>
+    ) : (
+      <div className="flex flex-col gap-3">
+        {messages.map(msg => (
+          <div
+            key={msg._id}
+            className={`bg-white rounded-2xl border p-4 ${
+              !msg.isRead ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <p className="font-medium text-gray-900">{msg.subject}</p>
+                  {!msg.isRead && (
+                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">New</span>
+                  )}
+                  {msg.isResolved && (
+                    <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Resolved</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-2 leading-relaxed">{msg.message}</p>
+                <p className="text-xs text-gray-400">
+                  From <span className="font-medium">{msg.user?.name}</span> · {msg.user?.email} · {new Date(msg.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {!msg.isRead && (
+                  <button
+                    onClick={() => handleMarkRead(msg._id)}
+                    className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition"
+                  >
+                    Mark read
+                  </button>
+                )}
+                {!msg.isResolved && (
+                  <button
+                    onClick={() => handleMarkResolved(msg._id)}
+                    className="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-3 py-1.5 rounded-lg transition"
+                  >
+                    Resolve
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDeleteMessage(msg._id)}
+                  className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
       </div>
     </div>
   )

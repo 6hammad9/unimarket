@@ -22,7 +22,11 @@ export default function Navbar() {
           <Link to="/browse" className="text-sm text-gray-600 hover:text-blue-600 transition">
             Browse
           </Link>
-
+{user && (
+  <Link to="/contact" className="text-sm text-gray-600 hover:text-blue-600 transition">
+    Support
+  </Link>
+)}
           {user ? (
             <>
               <Link to="/create" className="text-sm text-gray-600 hover:text-blue-600 transition">
