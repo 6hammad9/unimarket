@@ -4,7 +4,8 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import authRoutes from './routes/auth.js'
 import listingRoutes from './routes/listings.js'
-import uploadRoute from './routes/upload.js'
+import uploadRoutes from './routes/upload.js'
+import universityRoutes from './routes/universities.js'
 import adminRoutes from './routes/admin.js'
 
 dotenv.config()
@@ -20,9 +21,12 @@ mongoose.connect(process.env.MONGO_URI)
 app.get('/', (req, res) => {
   res.json({ message: 'API is running' })
 })
-app.use('/api/admin', adminRoutes)
+
 app.use('/api/auth', authRoutes)
 app.use('/api/listings', listingRoutes)
-app.use('/api/upload', uploadRoute)
+app.use('/api/upload', uploadRoutes)
+app.use('/api/universities', universityRoutes)
+app.use('/api/admin', adminRoutes)
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

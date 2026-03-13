@@ -6,7 +6,7 @@ import { sendVerificationEmail, sendResetEmail } from '../utils/sendEmail.js'
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body
+    const { name, email, password, phone, university } = req.body
 
     // Password strength check
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
@@ -60,14 +60,14 @@ if (existingUser && !existingUser.isVerified) {
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     await User.create({
-      name,
-      email,
-      password: hashed,
-      phone,
-      verificationToken,
-      verificationTokenExpiry
-    })
-
+  name,
+  email,
+  password: hashed,
+  phone,
+  university: university || null,
+  verificationToken,
+  verificationTokenExpiry
+})
     await sendVerificationEmail(email, verificationToken)
 
     res.json({ message: 'Registration successful! Please check your email to verify your account.' })
@@ -115,15 +115,16 @@ export const login = async (req, res) => {
     if (!match) return res.status(400).json({ message: 'Invalid credentials' })
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
-res.json({ 
-  token, 
-  user: { 
-    id: user._id, 
-    name: user.name, 
-    email: user.email, 
+res.json({
+  token,
+  user: {
+    id: user._id,
+    name: user.name,
+    email: user.email,
     phone: user.phone,
-    isAdmin: user.isAdmin 
-  } 
+    isAdmin: user.isAdmin,
+    university: user.university
+  }
 })
 
   } catch (err) {
