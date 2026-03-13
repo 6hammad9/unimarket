@@ -10,16 +10,34 @@ export default function Admin() {
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
   const [listings, setListings] = useState([])
+  const [universities, setUniversities] = useState([])
+  const [allUnisForDropdown, setAllUnisForDropdown] = useState([])
   const [editingListing, setEditingListing] = useState(null)
   const [editingUser, setEditingUser] = useState(null)
+  const [editingUni, setEditingUni] = useState(null)
+  const [newUni, setNewUni] = useState({ name: '', city: '', country: '' })
   const [loading, setLoading] = useState(false)
 
   const headers = { Authorization: `Bearer ${token}` }
+
+  // Always fetch universities for the user edit dropdown
+  useEffect(() => {
+    const fetchAllUnis = async () => {
+      try {
+        const res = await api.get('/universities')
+        setAllUnisForDropdown(res.data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchAllUnis()
+  }, [])
 
   useEffect(() => {
     if (tab === 'stats') fetchStats()
     if (tab === 'users') fetchUsers()
     if (tab === 'listings') fetchListings()
+    if (tab === 'universities') fetchUniversities()
   }, [tab])
 
   const fetchStats = async () => {
@@ -55,6 +73,18 @@ export default function Admin() {
     }
   }
 
+  const fetchUniversities = async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/admin/universities', { headers })
+      setUniversities(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDeleteUser = async (id) => {
     if (!window.confirm('Delete this user and all their listings?')) return
     try {
@@ -76,7 +106,11 @@ export default function Admin() {
 
   const handleEditUserSave = async () => {
     try {
-      const res = await api.put(`/admin/users/${editingUser._id}`, editingUser, { headers })
+      const payload = {
+        ...editingUser,
+        university: editingUser.university?._id || editingUser.university || null
+      }
+      const res = await api.put(`/admin/users/${editingUser._id}`, payload, { headers })
       setUsers(users.map(u => u._id === editingUser._id ? res.data : u))
       setEditingUser(null)
     } catch (err) {
@@ -104,6 +138,49 @@ export default function Admin() {
     }
   }
 
+  const handleCreateUni = async () => {
+    if (!newUni.name || !newUni.city || !newUni.country) return
+    try {
+      const res = await api.post('/universities', newUni, { headers })
+      setUniversities([...universities, res.data])
+      setAllUnisForDropdown([...allUnisForDropdown, res.data])
+      setNewUni({ name: '', city: '', country: '' })
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error creating university')
+    }
+  }
+
+  const handleDeleteUni = async (id) => {
+    if (!window.confirm('Delete this university?')) return
+    try {
+      await api.delete(`/universities/${id}`, { headers })
+      setUniversities(universities.filter(u => u._id !== id))
+      setAllUnisForDropdown(allUnisForDropdown.filter(u => u._id !== id))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleToggleUniActive = async (uni) => {
+    try {
+      const res = await api.put(`/universities/${uni._id}`, { ...uni, isActive: !uni.isActive }, { headers })
+      setUniversities(universities.map(u => u._id === uni._id ? res.data : u))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleEditUniSave = async () => {
+    try {
+      const res = await api.put(`/universities/${editingUni._id}`, editingUni, { headers })
+      setUniversities(universities.map(u => u._id === editingUni._id ? res.data : u))
+      setAllUnisForDropdown(allUnisForDropdown.map(u => u._id === editingUni._id ? res.data : u))
+      setEditingUni(null)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -118,8 +195,8 @@ export default function Admin() {
       <div className="max-w-6xl mx-auto px-6 py-8">
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8">
-          {['stats', 'listings', 'users'].map((t) => (
+        <div className="flex gap-2 mb-8 flex-wrap">
+          {['stats', 'listings', 'users', 'universities'].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -216,18 +293,8 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={handleEditListingSave}
-                            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingListing(null)}
-                            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-sm"
-                          >
-                            Cancel
-                          </button>
+                          <button onClick={handleEditListingSave} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm">Save</button>
+                          <button onClick={() => setEditingListing(null)} className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-sm">Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -247,21 +314,14 @@ export default function Admin() {
                             )}
                           </div>
                           <p className="text-sm text-blue-600 font-medium">Rs {listing.price}</p>
-                          <p className="text-xs text-gray-400 capitalize">{listing.category} · {listing.seller?.name} · {listing.seller?.email}</p>
+                          <p className="text-xs text-gray-400 capitalize">
+                            {listing.category} · {listing.seller?.name} · {listing.seller?.email}
+                            {listing.university && ` · ${listing.university.name}`}
+                          </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => setEditingListing(listing)}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteListing(listing._id)}
-                            className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition"
-                          >
-                            Delete
-                          </button>
+                          <button onClick={() => setEditingListing(listing)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">Edit</button>
+                          <button onClick={() => handleDeleteListing(listing._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>
                         </div>
                       </div>
                     )}
@@ -320,20 +380,25 @@ export default function Admin() {
                               Verified
                             </label>
                           </div>
+                          <div className="col-span-2">
+                            <label className="text-xs text-gray-400 mb-1 block">University</label>
+                            <select
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                              value={editingUser.university?._id || editingUser.university || ''}
+                              onChange={e => setEditingUser({ ...editingUser, university: e.target.value })}
+                            >
+                              <option value="">No university</option>
+                              {allUnisForDropdown.map(u => (
+                                <option key={u._id} value={u._id}>
+                                  {u.name} — {u.city}, {u.country}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={handleEditUserSave}
-                            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingUser(null)}
-                            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-sm"
-                          >
-                            Cancel
-                          </button>
+                          <button onClick={handleEditUserSave} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm">Save</button>
+                          <button onClick={() => setEditingUser(null)} className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-sm">Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -350,26 +415,119 @@ export default function Admin() {
                           </div>
                           <p className="text-sm text-gray-500">{user.email}</p>
                           <p className="text-xs text-gray-400">{user.phone}</p>
+                          {user.university && (
+                            <p className="text-xs text-blue-400 mt-0.5">
+                              🎓 {user.university.name} · {user.university.city}
+                            </p>
+                          )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => setEditingUser(user)}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleToggleAdmin(user._id)}
-                            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition"
-                          >
+                          <button onClick={() => setEditingUser(user)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">Edit</button>
+                          <button onClick={() => handleToggleAdmin(user._id)} className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition">
                             {user.isAdmin ? 'Remove admin' : 'Make admin'}
                           </button>
-                          <button
-                            onClick={() => handleDeleteUser(user._id)}
-                            className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition"
-                          >
-                            Delete
+                          <button onClick={() => handleDeleteUser(user._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Universities */}
+        {tab === 'universities' && (
+          <div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-3">Add new university</p>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <input
+                  placeholder="University name"
+                  value={newUni.name}
+                  onChange={e => setNewUni({ ...newUni, name: e.target.value })}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  placeholder="City"
+                  value={newUni.city}
+                  onChange={e => setNewUni({ ...newUni, city: e.target.value })}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  placeholder="Country"
+                  value={newUni.country}
+                  onChange={e => setNewUni({ ...newUni, country: e.target.value })}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <button
+                onClick={handleCreateUni}
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+              >
+                Add university
+              </button>
+            </div>
+
+            {loading ? (
+              <p className="text-gray-400 text-center py-10">Loading...</p>
+            ) : universities.length === 0 ? (
+              <p className="text-gray-400 text-center py-10">No universities yet. Add one above.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {universities.map(uni => (
+                  <div key={uni._id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                    {editingUni?._id === uni._id ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-400 mb-1 block">Name</label>
+                            <input
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.name}
+                              onChange={e => setEditingUni({ ...editingUni, name: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400 mb-1 block">City</label>
+                            <input
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.city}
+                              onChange={e => setEditingUni({ ...editingUni, city: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400 mb-1 block">Country</label>
+                            <input
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.country}
+                              onChange={e => setEditingUni({ ...editingUni, country: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={handleEditUniSave} className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm">Save</button>
+                          <button onClick={() => setEditingUni(null)} className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-sm">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-medium text-gray-900">{uni.name}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${uni.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                              {uni.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">{uni.city}, {uni.country}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button onClick={() => setEditingUni(uni)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">Edit</button>
+                          <button onClick={() => handleToggleUniActive(uni)} className="text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg transition">
+                            {uni.isActive ? 'Deactivate' : 'Activate'}
                           </button>
+                          <button onClick={() => handleDeleteUni(uni._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>
                         </div>
                       </div>
                     )}
