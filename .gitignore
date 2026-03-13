@@ -1,0 +1,8 @@
+uni_ebay/node_modules/
+uni_ebay/dist/
+uni_ebay/dist-ssr/
+uni_ebay/.env
+
+# Backend
+uni_ebay_backend/node_modules/
+uni_ebay_backend/.env
