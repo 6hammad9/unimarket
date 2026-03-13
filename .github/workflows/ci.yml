@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, 'feature/*']
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  frontend:
+    name: Frontend build check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          cd uni_ebay
+          npm install
+
+      - name: Build
+        run: |
+          cd uni_ebay
+          npm run build
+        env:
+          VITE_API_URL: http://localhost:5000/api
+
+  backend:
+    name: Backend install check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          cd uni_ebay_backend
+          npm install
