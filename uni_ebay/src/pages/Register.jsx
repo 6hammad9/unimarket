@@ -1,17 +1,25 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
+import './Auth.css'
 
 const checkStrength = (password) => {
   const checks = {
-    length: password.length >= 8,
+    length:    password.length >= 8,
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    special: /[@$!%*?&]/.test(password),
+    number:    /\d/.test(password),
+    special:   /[@$!%*?&]/.test(password),
   }
   const passed = Object.values(checks).filter(Boolean).length
   return { checks, passed }
+}
+
+const getBarClass = (index, passed) => {
+  if (index > passed) return ''
+  if (passed <= 2) return 'weak'
+  if (passed <= 3) return 'medium'
+  return 'strong'
 }
 
 export default function Register() {
@@ -24,34 +32,20 @@ export default function Register() {
   const { checks, passed } = checkStrength(form.password)
 
   useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const res = await api.get('/universities')
-        setUniversities(res.data)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    fetchUniversities()
+    api.get('/universities').then(r => setUniversities(r.data)).catch(console.error)
   }, [])
 
   useEffect(() => {
     if (countdown <= 0) return
-    const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
   }, [countdown])
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-
     if (form.password !== form.confirmPassword) return setError('Passwords do not match')
     if (passed < 5) return setError('Please meet all password requirements')
-
     setLoading(true)
     try {
       await api.post('/auth/register', {
@@ -72,135 +66,194 @@ export default function Register() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-green-600 text-2xl">✓</span>
+  return (
+    <div className="auth-root">
+
+      {/* Left panel */}
+      <div className="auth-left">
+        <Link to="/" className="auth-left-logo">
+          Campus<span>Exchange</span>
+        </Link>
+
+        <div className="auth-left-content">
+          <div className="auth-left-eyebrow">
+            <div className="auth-left-eyebrow-line" />
+            <span>Join today</span>
           </div>
-          <h1 className="text-2xl font-medium mb-2">Check your email</h1>
-          <p className="text-gray-500 text-sm mb-6">
-            We sent a verification link to <strong>{form.email}</strong>. Click the link to activate your account.
+          <h1 className="auth-left-title">
+            Buy & sell<br />on campus,<br /><em>effortlessly.</em>
+          </h1>
+          <p className="auth-left-sub">
+            Create a free account and start buying or selling
+            within your university community in minutes.
           </p>
-          <Link to="/login" className="text-blue-600 hover:underline text-sm">Back to login</Link>
+
+          <div className="auth-features">
+            {[
+              { icon: '✓', text: 'Free to join — always' },
+              { icon: '🎓', text: 'Listings filtered to your university' },
+              { icon: '⚡', text: 'Go live in under 2 minutes' },
+              { icon: '🔒', text: 'Email verified accounts only' },
+            ].map(f => (
+              <div key={f.text} className="auth-feature">
+                <div className="auth-feature-dot">{f.icon}</div>
+                <span className="auth-feature-text">{f.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="auth-left-footer">
+          © 2026 CAMPUSEXCHANGE
         </div>
       </div>
-    )
-  }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-md">
-        <h1 className="text-2xl font-medium mb-1">Create an account</h1>
-        <p className="text-gray-500 text-sm mb-6">Sign up to buy and sell on campus</p>
+      {/* Right panel */}
+      <div className="auth-right">
+        <div className="auth-form-wrap">
 
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-            {error}
-            {countdown > 0 && <span className="block mt-1 font-medium">Resend available in {countdown}s</span>}
-          </div>
-        )}
+          {success ? (
+            <div className="auth-success">
+              <div className="auth-success-icon">✓</div>
+              <div className="auth-success-title">Check your email</div>
+              <p className="auth-success-sub">
+                We sent a verification link to <strong>{form.email}</strong>.
+                Click the link to activate your account. Expires in 24 hours.
+              </p>
+              <Link to="/login" style={{ fontSize: 13, color: '#2DD4BF' }}>
+                Back to login →
+              </Link>
+            </div>
+          ) : (
+            <>
+              <h2 className="auth-form-title">Create account</h2>
+              <p className="auth-form-sub">Join your campus marketplace</p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Full name</label>
-            <input
-              type="text" name="name" value={form.name} onChange={handleChange}
-              placeholder="Ahmed Khan" required
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Email</label>
-            <input
-              type="email" name="email" value={form.email} onChange={handleChange}
-              placeholder="you@gmail.com" required
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Phone number</label>
-            <input
-              type="tel" name="phone" value={form.phone} onChange={handleChange}
-              placeholder="03001234567" required
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              University <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <select
-              name="university" value={form.university} onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Select your university</option>
-              {universities.map(uni => (
-                <option key={uni._id} value={uni._id}>
-                  {uni.name} — {uni.city}, {uni.country}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Password</label>
-            <input
-              type="password" name="password" value={form.password} onChange={handleChange}
-              placeholder="••••••••" required
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {form.password.length > 0 && (
-              <>
-                <div className="mt-2 flex gap-1">
-                  {[1,2,3,4,5].map(i => (
-                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                      passed >= i ? passed <= 2 ? 'bg-red-400' : passed <= 3 ? 'bg-yellow-400' : 'bg-green-400' : 'bg-gray-200'
-                    }`} />
-                  ))}
+              {error && (
+                <div className="auth-error">
+                  {error}
+                  {countdown > 0 && (
+                    <span className="auth-countdown">Resend available in {countdown}s</span>
+                  )}
                 </div>
-                <ul className="mt-2 flex flex-col gap-1">
-                  {[
-                    { key: 'length', label: 'At least 8 characters' },
-                    { key: 'uppercase', label: 'One uppercase letter' },
-                    { key: 'lowercase', label: 'One lowercase letter' },
-                    { key: 'number', label: 'One number' },
-                    { key: 'special', label: 'One special character (@$!%*?&)' },
-                  ].map(({ key, label }) => (
-                    <li key={key} className={`text-xs flex items-center gap-1.5 ${checks[key] ? 'text-green-600' : 'text-gray-400'}`}>
-                      <span>{checks[key] ? '✓' : '○'}</span> {label}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
+              )}
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">Confirm password</label>
-            <input
-              type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
-              placeholder="••••••••" required
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+              <form onSubmit={handleSubmit}>
+                <div className="auth-field">
+                  <label className="auth-label">Full name</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    placeholder="Ahmed Khan"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
 
-          <button
-            type="submit" disabled={loading || countdown > 0}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : countdown > 0 ? `Wait ${countdown}s` : 'Create account'}
-          </button>
-        </form>
+                <div className="auth-field">
+                  <label className="auth-label">Email</label>
+                  <input
+                    className="auth-input"
+                    type="email"
+                    placeholder="you@gmail.com"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    required
+                  />
+                </div>
 
-        <p className="text-sm text-center text-gray-500 mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
-        </p>
+                <div className="auth-field">
+                  <label className="auth-label">Phone</label>
+                  <input
+                    className="auth-input"
+                    type="tel"
+                    placeholder="03001234567"
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="auth-field">
+                  <label className="auth-label">University <span style={{ color: '#B0CECE', fontWeight: 300, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <select
+                    className="auth-select"
+                    value={form.university}
+                    onChange={e => setForm({ ...form, university: e.target.value })}
+                  >
+                    <option value="">Select your university</option>
+                    {universities.map(u => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} — {u.city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="auth-field">
+                  <label className="auth-label">Password</label>
+                  <input
+                    className="auth-input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    required
+                  />
+                  {form.password.length > 0 && (
+                    <>
+                      <div className="auth-strength-bars">
+                        {[1,2,3,4,5].map(i => (
+                          <div key={i} className={`auth-strength-bar ${getBarClass(i, passed)}`} />
+                        ))}
+                      </div>
+                      <div className="auth-requirements">
+                        {[
+                          { key: 'length',    label: 'At least 8 characters' },
+                          { key: 'uppercase', label: 'One uppercase letter' },
+                          { key: 'lowercase', label: 'One lowercase letter' },
+                          { key: 'number',    label: 'One number' },
+                          { key: 'special',   label: 'One special character (@$!%*?&)' },
+                        ].map(({ key, label }) => (
+                          <div key={key} className={`auth-req ${checks[key] ? 'met' : ''}`}>
+                            <span className="auth-req-dot">{checks[key] ? '✓' : '○'}</span>
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="auth-field">
+                  <label className="auth-label">Confirm password</label>
+                  <input
+                    className="auth-input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.confirmPassword}
+                    onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="auth-submit"
+                  disabled={loading || countdown > 0}
+                >
+                  {loading ? 'Creating account...' : countdown > 0 ? `Wait ${countdown}s` : 'Create account →'}
+                </button>
+              </form>
+
+              <div className="auth-switch">
+                Already have an account?{' '}
+                <Link to="/login">Sign in</Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -19,7 +19,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(false)
 const [messages, setMessages] = useState([])
   const headers = { Authorization: `Bearer ${token}` }
-
+const [searchQuery, setSearchQuery] = useState('')
+const [searchResults, setSearchResults] = useState(null)
+const [searching, setSearching] = useState(false)
   // Always fetch universities for the user edit dropdown
   useEffect(() => {
     const fetchAllUnis = async () => {
@@ -40,7 +42,24 @@ const [messages, setMessages] = useState([])
     if (tab === 'universities') fetchUniversities()
         if (tab === 'messages') fetchMessages()
   }, [tab])
-
+useEffect(() => {
+  if (searchQuery.trim().length < 2) {
+    setSearchResults(null)
+    return
+  }
+  const timeout = setTimeout(async () => {
+    setSearching(true)
+    try {
+      const res = await api.get(`/admin/search?q=${searchQuery}`, { headers })
+      setSearchResults(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSearching(false)
+    }
+  }, 400)
+  return () => clearTimeout(timeout)
+}, [searchQuery])
   const fetchStats = async () => {
     try {
       const res = await api.get('/admin/stats', { headers })
@@ -221,17 +240,118 @@ const handleDeleteMessage = async (id) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+   <div className="min-h-screen bg-gray-50">
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Admin Panel</h1>
-          <a href="/" className="text-sm text-blue-600 hover:underline">← Back to site</a>
+    {/* Header */}
+    <div className="bg-white border-b border-gray-100 px-6 py-4">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
+        <h1 className="text-xl font-semibold text-gray-900 flex-shrink-0">Admin Panel</h1>
+
+        {/* Search bar */}
+        <div className="relative flex-1 max-w-lg">
+          <input
+            type="text"
+            placeholder="Search listings, users, universities..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+          />
+          {searching && (
+            <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          )}
+
+          {/* Search results dropdown */}
+          {searchResults && searchQuery.length >= 2 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
+
+              {/* Listings results */}
+              {searchResults.listings?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Listings</p>
+                  {searchResults.listings.map(listing => (
+                    <button
+                      key={listing._id}
+                      onClick={() => { setTab('listings'); setSearchQuery('') ; setSearchResults(null) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
+                    >
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        {listing.images?.[0]
+                          ? <img src={listing.images[0]} alt="" className="w-full h-full object-cover" />
+                          : <span className="w-full h-full flex items-center justify-center text-gray-300 text-xs">?</span>
+                        }
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-900 truncate">{listing.title}</p>
+                        <p className="text-xs text-gray-400">Rs {listing.price} · {listing.seller?.name}</p>
+                      </div>
+                      {listing.sold && <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Sold</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Users results */}
+              {searchResults.users?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Users</p>
+                  {searchResults.users.map(user => (
+                    <button
+                      key={user._id}
+                      onClick={() => { setTab('users'); setSearchQuery(''); setSearchResults(null) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-600 text-sm font-medium">{user.name?.[0]?.toUpperCase()}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-900 truncate">{user.name}</p>
+                        <p className="text-xs text-gray-400">{user.email}</p>
+                      </div>
+                      {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Admin</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Universities results */}
+              {searchResults.universities?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Universities</p>
+                  {searchResults.universities.map(uni => (
+                    <button
+                      key={uni._id}
+                      onClick={() => { setTab('universities'); setSearchQuery(''); setSearchResults(null) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
+                    >
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-green-600 text-sm">🎓</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-900 truncate">{uni.name}</p>
+                        <p className="text-xs text-gray-400">{uni.city}, {uni.country}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ml-auto flex-shrink-0 ${uni.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                        {uni.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* No results */}
+              {searchResults.listings?.length === 0 && searchResults.users?.length === 0 && searchResults.universities?.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">No results for "{searchQuery}"</p>
+              )}
+
+              <div className="h-2" />
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+        <a href="/" className="text-sm text-blue-600 hover:underline flex-shrink-0">← Back to site</a>
+      </div>
+   
+
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 flex-wrap">
@@ -363,6 +483,19 @@ const handleDeleteMessage = async (id) => {
                             {listing.university && ` · ${listing.university.name}`}
                           </p>
                         </div>
+                        <button
+  onClick={async () => {
+    const res = await api.put(`/admin/listings/${listing._id}/feature`, {}, { headers })
+    setListings(listings.map(l => l._id === listing._id ? { ...l, isFeatured: res.data.isFeatured } : l))
+  }}
+  className={`text-xs px-3 py-1.5 rounded-lg transition ${
+    listing.isFeatured
+      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+  }`}
+>
+  {listing.isFeatured ? '★ Featured' : '☆ Feature'}
+</button>
                         <div className="flex gap-2 flex-shrink-0">
                           <button onClick={() => setEditingListing(listing)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">Edit</button>
                           <button onClick={() => handleDeleteListing(listing._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>

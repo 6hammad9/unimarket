@@ -18,7 +18,6 @@ export const getListings = async (req, res) => {
     if (search) filter.title = { $regex: search, $options: 'i' }
     if (university) filter.university = university
 
-    // Filter by city — find all universities in that city first
     if (city) {
       const { default: University } = await import('../models/University.js')
       const unis = await University.find({ city: { $regex: city, $options: 'i' } })
@@ -28,7 +27,7 @@ export const getListings = async (req, res) => {
     const listings = await Listing.find(filter)
       .populate('seller', 'name email phone')
       .populate('university', 'name city')
-      .sort({ createdAt: -1 })
+      .sort({ isFeatured: -1, createdAt: -1 })
 
     res.json(listings)
   } catch (err) {
