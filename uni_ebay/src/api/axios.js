@@ -5,8 +5,3 @@ const api = axios.create({
 })
 
 export default api
-```
-
-Then in Vercel environment variables make sure it's set to:
-```
-VITE_API_URL = https://unimarket-055x.onrender.com/api
