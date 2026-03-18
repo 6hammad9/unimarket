@@ -10,6 +10,7 @@ const listingSchema = new mongoose.Schema({
     required: true
   },
   images: [{ type: String }],
+  isFeatured: { type: Boolean, default: false },
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   university: { type: mongoose.Schema.Types.ObjectId, ref: 'University' },
   sold: { type: Boolean, default: false },

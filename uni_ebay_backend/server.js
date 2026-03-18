@@ -8,6 +8,7 @@ import uploadRoutes from './routes/upload.js'
 import universityRoutes from './routes/universities.js'
 import adminRoutes from './routes/admin.js'
 import messageRoutes from './routes/messages.js'
+import userRoutes from './routes/users.js'
 
 
 dotenv.config()
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/listings', listingRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/universities', universityRoutes)
+app.use('/api/users', userRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/admin', adminRoutes)
 

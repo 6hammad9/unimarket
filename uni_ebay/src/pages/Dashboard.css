@@ -1,0 +1,415 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+/* ─── Root ──────────────────────────────────────────────────── */
+.dash-root {
+  font-family: 'DM Sans', sans-serif;
+  background: #F4FAFA;
+  min-height: 100vh;
+  color: #0D3D3A;
+}
+
+.dash-root * { box-sizing: border-box; }
+
+/* ─── Header Banner ─────────────────────────────────────────── */
+.dash-banner {
+  background: #0D3D3A;
+  position: relative;
+  overflow: hidden;
+  padding: 40px 0 36px;
+}
+
+.dash-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px),
+    repeating-linear-gradient(0deg,  transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px);
+  pointer-events: none;
+}
+
+.dash-banner::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -5%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(45,212,191,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dash-banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dash-greeting-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2DD4BF;
+  margin-bottom: 8px;
+}
+
+.dash-greeting {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 500;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.dash-greeting em {
+  font-style: italic;
+  color: #2DD4BF;
+}
+
+.dash-greeting-sub {
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.4);
+  margin-top: 6px;
+}
+
+.dash-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2DD4BF;
+  color: #0D3D3A;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.dash-new-btn:hover {
+  background: #5EEAD4;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(45,212,191,0.35);
+}
+
+/* ─── Stats Row ─────────────────────────────────────────────── */
+.dash-stats-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  transform: translateY(-50%);
+}
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dash-stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 24px;
+  border: 1px solid rgba(45,212,191,0.12);
+  box-shadow:
+    0 2px 8px rgba(13,61,58,0.04),
+    0 12px 36px rgba(13,61,58,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s;
+}
+
+.dash-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.dash-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.dash-stat-icon.active { background: linear-gradient(135deg, #EDF7F6, #D4EEEB); }
+.dash-stat-icon.sold   { background: linear-gradient(135deg, #FEF9EE, #FEF0CC); }
+.dash-stat-icon.total  { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); }
+
+.dash-stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 500;
+  color: #0D3D3A;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.dash-stat-label {
+  font-size: 11px;
+  font-weight: 400;
+  color: #9BBAB8;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Main Content ──────────────────────────────────────────── */
+.dash-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px 80px;
+  margin-top: -24px;
+}
+
+.dash-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #D4EEEB;
+}
+
+.dash-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #0D3D3A;
+}
+
+.dash-section-count {
+  font-size: 12px;
+  color: #9BBAB8;
+  margin-top: 2px;
+}
+
+/* ─── Listing Row Cards ─────────────────────────────────────── */
+.dash-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-listing-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(45,212,191,0.12);
+  box-shadow: 0 2px 8px rgba(13,61,58,0.04), 0 4px 20px rgba(13,61,58,0.05);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.dash-listing-card:hover {
+  box-shadow: 0 4px 16px rgba(13,61,58,0.08), 0 8px 32px rgba(13,61,58,0.08);
+  transform: translateY(-1px);
+}
+
+.dash-listing-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #EDF7F6, #D4EEEB);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.dash-listing-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dash-listing-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-listing-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.dash-listing-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #0D3D3A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-sold-tag {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: white;
+  background: #EF4444;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dash-featured-tag {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0D3D3A;
+  background: #2DD4BF;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dash-listing-meta {
+  font-size: 12px;
+  color: #9BBAB8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-listing-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0D3D3A;
+}
+
+.dash-listing-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dash-action-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dash-action-btn.view {
+  background: #EDF7F6;
+  color: #0D3D3A;
+  border: 1px solid rgba(45,212,191,0.2);
+}
+
+.dash-action-btn.view:hover {
+  background: #D4EEEB;
+}
+
+.dash-action-btn.sold {
+  background: #0D3D3A;
+  color: white;
+}
+
+.dash-action-btn.sold:hover {
+  background: #0F4D49;
+}
+
+.dash-action-btn.delete {
+  background: #FEF2F2;
+  color: #EF4444;
+  border: 1px solid rgba(239,68,68,0.15);
+}
+
+.dash-action-btn.delete:hover {
+  background: #FEE2E2;
+}
+
+/* Empty state */
+.dash-empty {
+  text-align: center;
+  padding: 60px 0;
+  background: white;
+  border-radius: 20px;
+  border: 1px dashed #D4EEEB;
+}
+
+.dash-empty-icon {
+  font-size: 40px;
+  margin-bottom: 14px;
+  opacity: 0.4;
+}
+
+.dash-empty-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  color: #0D3D3A;
+  margin-bottom: 6px;
+}
+
+.dash-empty-sub {
+  font-size: 13px;
+  color: #9BBAB8;
+  margin-bottom: 20px;
+}
+
+/* ─── Footer ────────────────────────────────────────────────── */
+.dash-footer {
+  border-top: 1px solid #D4EEEB;
+  padding: 28px 40px;
+  text-align: center;
+  font-size: 11px;
+  color: #9BBAB8;
+  letter-spacing: 0.06em;
+  background: #EDF7F6;
+}
+
+/* ─── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dash-banner-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 20px;
+    gap: 16px;
+  }
+
+  .dash-stats-wrap { padding: 0 20px; }
+  .dash-stats { grid-template-columns: 1fr; gap: 10px; }
+  .dash-body { padding: 0 20px 60px; }
+
+  .dash-listing-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dash-listing-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

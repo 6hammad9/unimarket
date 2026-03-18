@@ -13,6 +13,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import Admin from './pages/Admin'
 import Contact from './pages/Contact'
+import Profile from './pages/Profile'
+
 
 
 
@@ -25,6 +27,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify/:token" element={<VerifyEmail />} />
+      <Route path="/profile" element={
+  <ProtectedRoute><Profile /></ProtectedRoute>
+} />
       <Route path="/contact" element={
   <ProtectedRoute><Contact /></ProtectedRoute>
 } />

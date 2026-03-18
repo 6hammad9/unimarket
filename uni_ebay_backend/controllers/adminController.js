@@ -1,7 +1,7 @@
 import User from '../models/User.js'
 import Listing from '../models/Listing.js'
 import { v2 as cloudinary } from 'cloudinary'
-
+import University from '../models/University.js'
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -25,8 +25,48 @@ export const getStats = async (req, res) => {
     res.status(500).json({ message: 'Server error' })
   }
 }
-
+export const toggleFeatured = async (req, res) => {
+  try {
+    const listing = await Listing.findById(req.params.id)
+    if (!listing) return res.status(404).json({ message: 'Listing not found' })
+    listing.isFeatured = !listing.isFeatured
+    await listing.save()
+    res.json({ message: `Listing ${listing.isFeatured ? 'featured' : 'unfeatured'}`, isFeatured: listing.isFeatured })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+}
 // Get all users
+export const adminSearch = async (req, res) => {
+  try {
+    const { q } = req.query
+    if (!q || q.trim().length < 2) {
+      return res.json({ listings: [], users: [], universities: [] })
+    }
+
+    const regex = { $regex: q, $options: 'i' }
+
+    const [listings, users, universities] = await Promise.all([
+      Listing.find({ title: regex })
+        .populate('seller', 'name email')
+        .populate('university', 'name city')
+        .limit(10)
+        .sort({ createdAt: -1 }),
+
+      User.find({ $or: [{ name: regex }, { email: regex }, { phone: regex }] })
+        .select('-password -verificationToken -resetPasswordToken')
+        .populate('university', 'name city')
+        .limit(10),
+
+      University.find({ $or: [{ name: regex }, { city: regex }, { country: regex }] })
+        .limit(10)
+    ])
+
+    res.json({ listings, users, universities })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+}
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find()

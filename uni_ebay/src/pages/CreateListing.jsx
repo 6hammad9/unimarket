@@ -126,7 +126,7 @@ export default function CreateListing() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Price (Rs)</label>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Price (EUR)</label>
               <input
                 type="number"
                 name="price"
