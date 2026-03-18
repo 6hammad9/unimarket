@@ -10,11 +10,18 @@ import adminRoutes from './routes/admin.js'
 import messageRoutes from './routes/messages.js'
 import userRoutes from './routes/users.js'
 
-
 dotenv.config()
 
 const app = express()
-app.use(cors())
+
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://unimarket-xi.vercel.app'
+  ],
+  credentials: true
+}))
+
 app.use(express.json())
 
 mongoose.connect(process.env.MONGO_URI)
