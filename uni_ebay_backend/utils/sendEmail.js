@@ -1,26 +1,13 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS,
-  }
-})
-
-transporter.verify((error) => {
-  if (error) console.log('Email error:', error)
-  else console.log('Email server ready')
-})
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export const sendVerificationEmail = async (email, token) => {
   const url = `${process.env.CLIENT_URL}/verify/${token}`
-  await transporter.sendMail({
-    from: '"CampusExchange" <hammadnaseer2230@gmail.com>',
+  await resend.emails.send({
+    from: 'CampusExchange <noreply@rntechnicalservices.com>',
     to: email,
     subject: 'Verify your CampusExchange account',
     html: `
@@ -38,8 +25,8 @@ export const sendVerificationEmail = async (email, token) => {
 
 export const sendResetEmail = async (email, token) => {
   const url = `${process.env.CLIENT_URL}/reset-password/${token}`
-  await transporter.sendMail({
-    from: '"CampusExchange" <hammadnaseer2230@gmail.com>',
+  await resend.emails.send({
+    from: 'CampusExchange <noreply@rntechnicalservices.com>',
     to: email,
     subject: 'Reset your CampusExchange password',
     html: `
@@ -54,3 +41,4 @@ export const sendResetEmail = async (email, token) => {
     `
   })
 }
+
