@@ -78,7 +78,14 @@ export const getUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error' })
   }
 }
-
+export const deleteUnverifiedUsers = async (req, res) => {
+  try {
+    const result = await User.deleteMany({ isVerified: false })
+    res.json({ message: `Deleted ${result.deletedCount} unverified accounts` })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+}
 // Delete user
 export const deleteUser = async (req, res) => {
   try {

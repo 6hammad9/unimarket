@@ -9,7 +9,7 @@ export const register = async (req, res) => {
     const { name, email, password, phone, university } = req.body
 
     // Password strength check
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         message: 'Password must be at least 8 characters and include uppercase, lowercase, number and special character (@$!%*?&)'

@@ -9,17 +9,18 @@ import universityRoutes from './routes/universities.js'
 import adminRoutes from './routes/admin.js'
 import messageRoutes from './routes/messages.js'
 import userRoutes from './routes/users.js'
+import User from './models/User.js'
 
 dotenv.config()
 
 const app = express()
 
 app.use(cors({
-  origin: [
-    'http://localhost:5000',
-    'https://unimarket-xi.vercel.app'
-  ],
-  credentials: true
+  // origin: [
+  //   'http://localhost:5000',
+  //   'https://unimarket-xi.vercel.app'
+  // ],
+  // credentials: true
 }))
 
 app.use(express.json())
@@ -28,6 +29,23 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log('DB error:', err))
 
+
+  // Auto cleanup unverified accounts older than 24 hours
+const cleanupUnverifiedUsers = async () => {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const result = await User.deleteMany({
+      isVerified: false,
+      createdAt: { $lt: cutoff }
+    })
+    if (result.deletedCount > 0) console.log(`Cleaned up ${result.deletedCount} unverified accounts`)
+  } catch (err) {
+    console.error('Cleanup error:', err.message)
+  }
+}
+
+cleanupUnverifiedUsers()
+setInterval(cleanupUnverifiedUsers, 60 * 60 * 1000)
 app.get('/', (req, res) => {
   res.json({ message: 'API is running' })
 })
