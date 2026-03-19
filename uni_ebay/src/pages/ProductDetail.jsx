@@ -150,7 +150,7 @@ export default function ProductDetail() {
           {/* Price */}
           <div className="pd-price">
             EUR {listing.price.toLocaleString()}
-            <span>PKR</span>
+            <span>€</span>
           </div>
 
           {/* Location tags */}
