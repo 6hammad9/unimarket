@@ -16,11 +16,11 @@ dotenv.config()
 const app = express()
 
 app.use(cors({
-  // origin: [
-  //   'http://localhost:5000',
-  //   'https://unimarket-xi.vercel.app'
-  // ],
-  // credentials: true
+  origin: [
+    'http://localhost:5000',
+    'https://unimarket-xi.vercel.app'
+  ],
+  credentials: true
 }))
 
 app.use(express.json())
