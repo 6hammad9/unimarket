@@ -17,12 +17,13 @@ export default function Admin() {
   const [editingUni, setEditingUni] = useState(null)
   const [newUni, setNewUni] = useState({ name: '', city: '', country: '' })
   const [loading, setLoading] = useState(false)
-const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(null)
+  const [searching, setSearching] = useState(false)
+
   const headers = { Authorization: `Bearer ${token}` }
-const [searchQuery, setSearchQuery] = useState('')
-const [searchResults, setSearchResults] = useState(null)
-const [searching, setSearching] = useState(false)
-  // Always fetch universities for the user edit dropdown
+
   useEffect(() => {
     const fetchAllUnis = async () => {
       try {
@@ -40,83 +41,39 @@ const [searching, setSearching] = useState(false)
     if (tab === 'users') fetchUsers()
     if (tab === 'listings') fetchListings()
     if (tab === 'universities') fetchUniversities()
-        if (tab === 'messages') fetchMessages()
+    if (tab === 'messages') fetchMessages()
   }, [tab])
-useEffect(() => {
-  if (searchQuery.trim().length < 2) {
-    setSearchResults(null)
-    return
-  }
-  const timeout = setTimeout(async () => {
-    setSearching(true)
-    try {
-      const res = await api.get(`/admin/search?q=${searchQuery}`, { headers })
-      setSearchResults(res.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSearching(false)
-    }
-  }, 400)
-  return () => clearTimeout(timeout)
-}, [searchQuery])
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) { setSearchResults(null); return }
+    const timeout = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const res = await api.get(`/admin/search?q=${searchQuery}`, { headers })
+        setSearchResults(res.data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setSearching(false)
+      }
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
+
   const fetchStats = async () => {
     try {
       const res = await api.get('/admin/stats', { headers })
       setStats(res.data)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
-const fetchMessages = async () => {
-  setLoading(true)
-  try {
-    const res = await api.get('/messages', { headers })
-    setMessages(res.data)
-  } catch (err) {
-    console.error(err)
-  } finally {
-    setLoading(false)
-  }
-}
 
-const handleMarkRead = async (id) => {
-  try {
-    const res = await api.put(`/messages/${id}/read`, {}, { headers })
-    setMessages(messages.map(m => m._id === id ? res.data : m))
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-const handleMarkResolved = async (id) => {
-  try {
-    const res = await api.put(`/messages/${id}/resolve`, {}, { headers })
-    setMessages(messages.map(m => m._id === id ? res.data : m))
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-const handleDeleteMessage = async (id) => {
-  if (!window.confirm('Delete this message?')) return
-  try {
-    await api.delete(`/messages/${id}`, { headers })
-    setMessages(messages.filter(m => m._id !== id))
-  } catch (err) {
-    console.error(err)
-  }
-}
   const fetchUsers = async () => {
     setLoading(true)
     try {
       const res = await api.get('/admin/users', { headers })
       setUsers(res.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
   const fetchListings = async () => {
@@ -124,11 +81,8 @@ const handleDeleteMessage = async (id) => {
     try {
       const res = await api.get('/admin/listings', { headers })
       setListings(res.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
   const fetchUniversities = async () => {
@@ -136,11 +90,17 @@ const handleDeleteMessage = async (id) => {
     try {
       const res = await api.get('/admin/universities', { headers })
       setUniversities(res.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }
+
+  const fetchMessages = async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/messages', { headers })
+      setMessages(res.data)
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
   const handleDeleteUser = async (id) => {
@@ -148,8 +108,17 @@ const handleDeleteMessage = async (id) => {
     try {
       await api.delete(`/admin/users/${id}`, { headers })
       setUsers(users.filter(u => u._id !== id))
+    } catch (err) { console.error(err) }
+  }
+
+  const handleDeleteUnverified = async () => {
+    if (!window.confirm('Delete all unverified accounts?')) return
+    try {
+      const res = await api.delete('/admin/users/unverified', { headers })
+      alert(res.data.message)
+      fetchUsers()
     } catch (err) {
-      console.error(err)
+      alert('Error deleting unverified users')
     }
   }
 
@@ -157,23 +126,16 @@ const handleDeleteMessage = async (id) => {
     try {
       const res = await api.put(`/admin/users/${id}/toggle-admin`, {}, { headers })
       setUsers(users.map(u => u._id === id ? { ...u, isAdmin: res.data.isAdmin } : u))
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleEditUserSave = async () => {
     try {
-      const payload = {
-        ...editingUser,
-        university: editingUser.university?._id || editingUser.university || null
-      }
+      const payload = { ...editingUser, university: editingUser.university?._id || editingUser.university || null }
       const res = await api.put(`/admin/users/${editingUser._id}`, payload, { headers })
       setUsers(users.map(u => u._id === editingUser._id ? res.data : u))
       setEditingUser(null)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleDeleteListing = async (id) => {
@@ -181,9 +143,7 @@ const handleDeleteMessage = async (id) => {
     try {
       await api.delete(`/admin/listings/${id}`, { headers })
       setListings(listings.filter(l => l._id !== id))
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleEditListingSave = async () => {
@@ -191,9 +151,14 @@ const handleDeleteMessage = async (id) => {
       await api.put(`/admin/listings/${editingListing._id}`, editingListing, { headers })
       setListings(listings.map(l => l._id === editingListing._id ? editingListing : l))
       setEditingListing(null)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
+  }
+
+  const handleToggleFeature = async (listing) => {
+    try {
+      const res = await api.put(`/admin/listings/${listing._id}/feature`, {}, { headers })
+      setListings(listings.map(l => l._id === listing._id ? { ...l, isFeatured: res.data.isFeatured } : l))
+    } catch (err) { console.error(err) }
   }
 
   const handleCreateUni = async () => {
@@ -203,9 +168,7 @@ const handleDeleteMessage = async (id) => {
       setUniversities([...universities, res.data])
       setAllUnisForDropdown([...allUnisForDropdown, res.data])
       setNewUni({ name: '', city: '', country: '' })
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error creating university')
-    }
+    } catch (err) { alert(err.response?.data?.message || 'Error creating university') }
   }
 
   const handleDeleteUni = async (id) => {
@@ -214,18 +177,14 @@ const handleDeleteMessage = async (id) => {
       await api.delete(`/universities/${id}`, { headers })
       setUniversities(universities.filter(u => u._id !== id))
       setAllUnisForDropdown(allUnisForDropdown.filter(u => u._id !== id))
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleToggleUniActive = async (uni) => {
     try {
       const res = await api.put(`/universities/${uni._id}`, { ...uni, isActive: !uni.isActive }, { headers })
       setUniversities(universities.map(u => u._id === uni._id ? res.data : u))
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleEditUniSave = async () => {
@@ -234,145 +193,143 @@ const handleDeleteMessage = async (id) => {
       setUniversities(universities.map(u => u._id === editingUni._id ? res.data : u))
       setAllUnisForDropdown(allUnisForDropdown.map(u => u._id === editingUni._id ? res.data : u))
       setEditingUni(null)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
+  }
+
+  const handleMarkRead = async (id) => {
+    try {
+      const res = await api.put(`/messages/${id}/read`, {}, { headers })
+      setMessages(messages.map(m => m._id === id ? res.data : m))
+    } catch (err) { console.error(err) }
+  }
+
+  const handleMarkResolved = async (id) => {
+    try {
+      const res = await api.put(`/messages/${id}/resolve`, {}, { headers })
+      setMessages(messages.map(m => m._id === id ? res.data : m))
+    } catch (err) { console.error(err) }
+  }
+
+  const handleDeleteMessage = async (id) => {
+    if (!window.confirm('Delete this message?')) return
+    try {
+      await api.delete(`/messages/${id}`, { headers })
+      setMessages(messages.filter(m => m._id !== id))
+    } catch (err) { console.error(err) }
   }
 
   return (
-   <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
 
-    {/* Header */}
-    <div className="bg-white border-b border-gray-100 px-6 py-4">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
-        <h1 className="text-xl font-semibold text-gray-900 flex-shrink-0">Admin Panel</h1>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
+          <h1 className="text-xl font-semibold text-gray-900 flex-shrink-0">Admin Panel</h1>
 
-        {/* Search bar */}
-        <div className="relative flex-1 max-w-lg">
-          <input
-            type="text"
-            placeholder="Search listings, users, universities..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
-          />
-          {searching && (
-            <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          )}
+          {/* Search bar */}
+          <div className="relative flex-1 max-w-lg">
+            <input
+              type="text"
+              placeholder="Search listings, users, universities..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+            />
+            {searching && (
+              <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            )}
 
-          {/* Search results dropdown */}
-          {searchResults && searchQuery.length >= 2 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
+            {/* Search results dropdown */}
+            {searchResults && searchQuery.length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
+                {searchResults.listings?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Listings</p>
+                    {searchResults.listings.map(listing => (
+                      <button key={listing._id} onClick={() => { setTab('listings'); setSearchQuery(''); setSearchResults(null) }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left">
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                          {listing.images?.[0] ? <img src={listing.images[0]} alt="" className="w-full h-full object-cover" /> : <span className="w-full h-full flex items-center justify-center text-gray-300 text-xs">?</span>}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{listing.title}</p>
+                          <p className="text-xs text-gray-400">Rs {listing.price} · {listing.seller?.name}</p>
+                        </div>
+                        {listing.sold && <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Sold</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.users?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Users</p>
+                    {searchResults.users.map(user => (
+                      <button key={user._id} onClick={() => { setTab('users'); setSearchQuery(''); setSearchResults(null) }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-blue-600 text-sm font-medium">{user.name?.[0]?.toUpperCase()}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{user.name}</p>
+                          <p className="text-xs text-gray-400">{user.email}</p>
+                        </div>
+                        {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Admin</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.universities?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Universities</p>
+                    {searchResults.universities.map(uni => (
+                      <button key={uni._id} onClick={() => { setTab('universities'); setSearchQuery(''); setSearchResults(null) }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-green-600 text-sm">🎓</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{uni.name}</p>
+                          <p className="text-xs text-gray-400">{uni.city}, {uni.country}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ml-auto flex-shrink-0 ${uni.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                          {uni.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.listings?.length === 0 && searchResults.users?.length === 0 && searchResults.universities?.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-6">No results for "{searchQuery}"</p>
+                )}
+                <div className="h-2" />
+              </div>
+            )}
+          </div>
 
-              {/* Listings results */}
-              {searchResults.listings?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Listings</p>
-                  {searchResults.listings.map(listing => (
-                    <button
-                      key={listing._id}
-                      onClick={() => { setTab('listings'); setSearchQuery('') ; setSearchResults(null) }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
-                    >
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        {listing.images?.[0]
-                          ? <img src={listing.images[0]} alt="" className="w-full h-full object-cover" />
-                          : <span className="w-full h-full flex items-center justify-center text-gray-300 text-xs">?</span>
-                        }
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{listing.title}</p>
-                        <p className="text-xs text-gray-400">Rs {listing.price} · {listing.seller?.name}</p>
-                      </div>
-                      {listing.sold && <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Sold</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Users results */}
-              {searchResults.users?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Users</p>
-                  {searchResults.users.map(user => (
-                    <button
-                      key={user._id}
-                      onClick={() => { setTab('users'); setSearchQuery(''); setSearchResults(null) }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
-                    >
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-600 text-sm font-medium">{user.name?.[0]?.toUpperCase()}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{user.name}</p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
-                      </div>
-                      {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-auto flex-shrink-0">Admin</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Universities results */}
-              {searchResults.universities?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-400 px-4 pt-3 pb-1 uppercase tracking-wide">Universities</p>
-                  {searchResults.universities.map(uni => (
-                    <button
-                      key={uni._id}
-                      onClick={() => { setTab('universities'); setSearchQuery(''); setSearchResults(null) }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left"
-                    >
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-green-600 text-sm">🎓</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{uni.name}</p>
-                        <p className="text-xs text-gray-400">{uni.city}, {uni.country}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ml-auto flex-shrink-0 ${uni.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                        {uni.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* No results */}
-              {searchResults.listings?.length === 0 && searchResults.users?.length === 0 && searchResults.universities?.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-6">No results for "{searchQuery}"</p>
-              )}
-
-              <div className="h-2" />
-            </div>
-          )}
+          <a href="/" className="text-sm text-blue-600 hover:underline flex-shrink-0">← Back to site</a>
         </div>
-
-        <a href="/" className="text-sm text-blue-600 hover:underline flex-shrink-0">← Back to site</a>
       </div>
-   
 
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 flex-wrap">
-         {['stats', 'listings', 'users', 'universities', 'messages'].map((t) => (
-  <button
-    key={t}
-    onClick={() => setTab(t)}
-    className={`px-5 py-2 rounded-lg text-sm font-medium transition capitalize flex items-center gap-2 ${
-      tab === t
-        ? 'bg-blue-600 text-white'
-        : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
-    }`}
-  >
-    {t}
-    {t === 'messages' && stats?.unreadMessages > 0 && (
-      <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-        {stats.unreadMessages}
-      </span>
-    )}
-  </button>
-))}
+          {['stats', 'listings', 'users', 'universities', 'messages'].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition capitalize flex items-center gap-2 ${
+                tab === t ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
+              }`}
+            >
+              {t}
+              {t === 'messages' && stats?.unreadMessages > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {stats.unreadMessages}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Stats */}
@@ -384,6 +341,7 @@ const handleDeleteMessage = async (id) => {
               { label: 'Total listings', value: stats.totalListings },
               { label: 'Active listings', value: stats.activeListings },
               { label: 'Sold listings', value: stats.soldListings },
+              { label: 'Unread messages', value: stats.unreadMessages || 0 },
             ].map((s) => (
               <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-5">
                 <p className="text-xs text-gray-400 mb-1">{s.label}</p>
@@ -409,49 +367,32 @@ const handleDeleteMessage = async (id) => {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Title</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingListing.title}
-                              onChange={e => setEditingListing({ ...editingListing, title: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingListing.title} onChange={e => setEditingListing({ ...editingListing, title: e.target.value })} />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Price (Rs)</label>
-                            <input
-                              type="number"
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingListing.price}
-                              onChange={e => setEditingListing({ ...editingListing, price: e.target.value })}
-                            />
+                            <input type="number" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingListing.price} onChange={e => setEditingListing({ ...editingListing, price: e.target.value })} />
                           </div>
                         </div>
                         <div>
                           <label className="text-xs text-gray-400 mb-1 block">Description</label>
-                          <textarea
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
-                            rows={2}
-                            value={editingListing.description}
-                            onChange={e => setEditingListing({ ...editingListing, description: e.target.value })}
-                          />
+                          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none" rows={2}
+                            value={editingListing.description} onChange={e => setEditingListing({ ...editingListing, description: e.target.value })} />
                         </div>
                         <div className="flex gap-3 items-center">
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Category</label>
-                            <select
-                              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
-                              value={editingListing.category}
-                              onChange={e => setEditingListing({ ...editingListing, category: e.target.value })}
-                            >
+                            <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                              value={editingListing.category} onChange={e => setEditingListing({ ...editingListing, category: e.target.value })}>
                               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
                           <div className="flex items-end pb-2">
                             <label className="flex items-center gap-2 text-sm text-gray-600">
-                              <input
-                                type="checkbox"
-                                checked={editingListing.sold}
-                                onChange={e => setEditingListing({ ...editingListing, sold: e.target.checked })}
-                              />
+                              <input type="checkbox" checked={editingListing.sold}
+                                onChange={e => setEditingListing({ ...editingListing, sold: e.target.checked })} />
                               Mark as sold
                             </label>
                           </div>
@@ -464,39 +405,24 @@ const handleDeleteMessage = async (id) => {
                     ) : (
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center">
-                          {listing.images?.[0] ? (
-                            <img src={listing.images[0]} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-gray-300 text-xs">No img</span>
-                          )}
+                          {listing.images?.[0] ? <img src={listing.images[0]} alt="" className="w-full h-full object-cover" /> : <span className="text-gray-300 text-xs">No img</span>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <p className="font-medium text-gray-900 truncate">{listing.title}</p>
-                            {listing.sold && (
-                              <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full flex-shrink-0">Sold</span>
-                            )}
+                            {listing.sold && <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full flex-shrink-0">Sold</span>}
+                            {listing.isFeatured && <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full flex-shrink-0">★ Featured</span>}
                           </div>
                           <p className="text-sm text-blue-600 font-medium">Rs {listing.price}</p>
                           <p className="text-xs text-gray-400 capitalize">
                             {listing.category} · {listing.seller?.name} · {listing.seller?.email}
-                            {listing.university && ` · ${listing.university.name}`}
                           </p>
                         </div>
-                        <button
-  onClick={async () => {
-    const res = await api.put(`/admin/listings/${listing._id}/feature`, {}, { headers })
-    setListings(listings.map(l => l._id === listing._id ? { ...l, isFeatured: res.data.isFeatured } : l))
-  }}
-  className={`text-xs px-3 py-1.5 rounded-lg transition ${
-    listing.isFeatured
-      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-  }`}
->
-  {listing.isFeatured ? '★ Featured' : '☆ Feature'}
-</button>
                         <div className="flex gap-2 flex-shrink-0">
+                          <button onClick={() => handleToggleFeature(listing)}
+                            className={`text-xs px-3 py-1.5 rounded-lg transition ${listing.isFeatured ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                            {listing.isFeatured ? '★ Unfeature' : '☆ Feature'}
+                          </button>
                           <button onClick={() => setEditingListing(listing)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">Edit</button>
                           <button onClick={() => handleDeleteListing(listing._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>
                         </div>
@@ -512,6 +438,16 @@ const handleDeleteMessage = async (id) => {
         {/* Users */}
         {tab === 'users' && (
           <div>
+            {/* Bulk delete unverified */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleDeleteUnverified}
+                className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-lg transition border border-red-100"
+              >
+                🗑 Delete all unverified
+              </button>
+            </div>
+
             {loading ? (
               <p className="text-gray-400 text-center py-10">Loading...</p>
             ) : users.length === 0 ? (
@@ -525,50 +461,34 @@ const handleDeleteMessage = async (id) => {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Name</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUser.name}
-                              onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUser.name} onChange={e => setEditingUser({ ...editingUser, name: e.target.value })} />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Phone</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUser.phone}
-                              onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUser.phone} onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })} />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Email</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUser.email}
-                              onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUser.email} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} />
                           </div>
                           <div className="flex items-end pb-2">
                             <label className="flex items-center gap-2 text-sm text-gray-600">
-                              <input
-                                type="checkbox"
-                                checked={editingUser.isVerified}
-                                onChange={e => setEditingUser({ ...editingUser, isVerified: e.target.checked })}
-                              />
+                              <input type="checkbox" checked={editingUser.isVerified}
+                                onChange={e => setEditingUser({ ...editingUser, isVerified: e.target.checked })} />
                               Verified
                             </label>
                           </div>
                           <div className="col-span-2">
                             <label className="text-xs text-gray-400 mb-1 block">University</label>
-                            <select
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
                               value={editingUser.university?._id || editingUser.university || ''}
-                              onChange={e => setEditingUser({ ...editingUser, university: e.target.value })}
-                            >
+                              onChange={e => setEditingUser({ ...editingUser, university: e.target.value })}>
                               <option value="">No university</option>
                               {allUnisForDropdown.map(u => (
-                                <option key={u._id} value={u._id}>
-                                  {u.name} — {u.city}, {u.country}
-                                </option>
+                                <option key={u._id} value={u._id}>{u.name} — {u.city}, {u.country}</option>
                               ))}
                             </select>
                           </div>
@@ -583,19 +503,13 @@ const handleDeleteMessage = async (id) => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <p className="font-medium text-gray-900">{user.name}</p>
-                            {user.isAdmin && (
-                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Admin</span>
-                            )}
-                            {!user.isVerified && (
-                              <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Unverified</span>
-                            )}
+                            {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Admin</span>}
+                            {!user.isVerified && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Unverified</span>}
                           </div>
                           <p className="text-sm text-gray-500">{user.email}</p>
                           <p className="text-xs text-gray-400">{user.phone}</p>
                           {user.university && (
-                            <p className="text-xs text-blue-400 mt-0.5">
-                              🎓 {user.university.name} · {user.university.city}
-                            </p>
+                            <p className="text-xs text-blue-400 mt-0.5">🎓 {user.university.name} · {user.university.city}</p>
                           )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
@@ -620,29 +534,17 @@ const handleDeleteMessage = async (id) => {
             <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">
               <p className="text-sm font-medium text-gray-700 mb-3">Add new university</p>
               <div className="grid grid-cols-3 gap-3 mb-3">
-                <input
-                  placeholder="University name"
-                  value={newUni.name}
+                <input placeholder="University name" value={newUni.name}
                   onChange={e => setNewUni({ ...newUni, name: e.target.value })}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  placeholder="City"
-                  value={newUni.city}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input placeholder="City" value={newUni.city}
                   onChange={e => setNewUni({ ...newUni, city: e.target.value })}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  placeholder="Country"
-                  value={newUni.country}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input placeholder="Country" value={newUni.country}
                   onChange={e => setNewUni({ ...newUni, country: e.target.value })}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              <button
-                onClick={handleCreateUni}
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-              >
+              <button onClick={handleCreateUni} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
                 Add university
               </button>
             </div>
@@ -660,27 +562,18 @@ const handleDeleteMessage = async (id) => {
                         <div className="grid grid-cols-3 gap-3">
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Name</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUni.name}
-                              onChange={e => setEditingUni({ ...editingUni, name: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.name} onChange={e => setEditingUni({ ...editingUni, name: e.target.value })} />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">City</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUni.city}
-                              onChange={e => setEditingUni({ ...editingUni, city: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.city} onChange={e => setEditingUni({ ...editingUni, city: e.target.value })} />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">Country</label>
-                            <input
-                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                              value={editingUni.country}
-                              onChange={e => setEditingUni({ ...editingUni, country: e.target.value })}
-                            />
+                            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                              value={editingUni.country} onChange={e => setEditingUni({ ...editingUni, country: e.target.value })} />
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -714,68 +607,47 @@ const handleDeleteMessage = async (id) => {
             )}
           </div>
         )}
-{tab === 'messages' && (
-  <div>
-    {loading ? (
-      <p className="text-gray-400 text-center py-10">Loading...</p>
-    ) : messages.length === 0 ? (
-      <p className="text-gray-400 text-center py-10">No messages yet.</p>
-    ) : (
-      <div className="flex flex-col gap-3">
-        {messages.map(msg => (
-          <div
-            key={msg._id}
-            className={`bg-white rounded-2xl border p-4 ${
-              !msg.isRead ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="font-medium text-gray-900">{msg.subject}</p>
-                  {!msg.isRead && (
-                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">New</span>
-                  )}
-                  {msg.isResolved && (
-                    <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Resolved</span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mb-2 leading-relaxed">{msg.message}</p>
-                <p className="text-xs text-gray-400">
-                  From <span className="font-medium">{msg.user?.name}</span> · {msg.user?.email} · {new Date(msg.createdAt).toLocaleDateString()}
-                </p>
+
+        {/* Messages */}
+        {tab === 'messages' && (
+          <div>
+            {loading ? (
+              <p className="text-gray-400 text-center py-10">Loading...</p>
+            ) : messages.length === 0 ? (
+              <p className="text-gray-400 text-center py-10">No messages yet.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {messages.map(msg => (
+                  <div key={msg._id} className={`bg-white rounded-2xl border p-4 ${!msg.isRead ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100'}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <p className="font-medium text-gray-900">{msg.subject}</p>
+                          {!msg.isRead && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">New</span>}
+                          {msg.isResolved && <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Resolved</span>}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2 leading-relaxed">{msg.message}</p>
+                        <p className="text-xs text-gray-400">
+                          From <span className="font-medium">{msg.user?.name}</span> · {msg.user?.email} · {new Date(msg.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {!msg.isRead && (
+                          <button onClick={() => handleMarkRead(msg._id)} className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition">Mark read</button>
+                        )}
+                        {!msg.isResolved && (
+                          <button onClick={() => handleMarkResolved(msg._id)} className="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-3 py-1.5 rounded-lg transition">Resolve</button>
+                        )}
+                        <button onClick={() => handleDeleteMessage(msg._id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                {!msg.isRead && (
-                  <button
-                    onClick={() => handleMarkRead(msg._id)}
-                    className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition"
-                  >
-                    Mark read
-                  </button>
-                )}
-                {!msg.isResolved && (
-                  <button
-                    onClick={() => handleMarkResolved(msg._id)}
-                    className="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-3 py-1.5 rounded-lg transition"
-                  >
-                    Resolve
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDeleteMessage(msg._id)}
-                  className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-3 py-1.5 rounded-lg transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+            )}
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
+        )}
+
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import express from 'express'
 import protect, { adminOnly } from '../middleware/auth.js'
 import { getAllUniversities } from '../controllers/universityController.js'
-import { getStats, getUsers, deleteUser, toggleAdmin, editUser, getAllListings, editListing, adminDeleteListing } from '../controllers/adminController.js'
+import { getStats, getUsers, deleteUser, toggleAdmin, editUser, getAllListings, editListing, adminDeleteListing,deleteUnverifiedUsers } from '../controllers/adminController.js'
 import { toggleFeatured } from '../controllers/adminController.js'
 import { adminSearch } from '../controllers/adminController.js'
 
@@ -13,6 +13,10 @@ router.use(protect, adminOnly) // all admin routes are protected
 
 router.get('/stats', getStats)
 router.get('/users', getUsers)
+
+// Must be before router.delete('/users/:id', ...)
+router.delete('/users/unverified', deleteUnverifiedUsers)
+router.delete('/users/:id', deleteUser)
 router.delete('/users/:id', deleteUser)
 router.get('/universities', getAllUniversities)
 router.put('/listings/:id/feature', toggleFeatured)
