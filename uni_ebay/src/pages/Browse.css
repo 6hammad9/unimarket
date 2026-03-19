@@ -563,27 +563,30 @@
   background: #F8F7F4;
 }
 
-/* ─── Responsive ────────────────────────────────────────────── */
+/* ─── Responsive (Tablets & Smaller) ────────────────────────── */
 @media (max-width: 860px) {
   .browse-body {
     grid-template-columns: 1fr;
     padding: 24px 16px 60px;
+    gap: 24px;
   }
 
   .sidebar {
     position: static;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    flex-direction: column; 
+    gap: 16px;
   }
 
   .sidebar-section {
     margin-bottom: 0;
+    padding: 14px;
   }
 
   .browse-hero-inner {
     padding: 0 16px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
   }
 
@@ -592,18 +595,102 @@
   }
 
   .browse-title {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .browse-subtitle {
     margin-left: 0;
+    white-space: normal;
+    line-height: 1.4;
+  }
+}
+/* ─── Mobile Filter Button (Hidden on Desktop) ─────────────── */
+.mobile-filter-btn {
+  display: none;
+}
+
+/* ─── Responsive (Tablets & Smaller) ────────────────────────── */
+@media (max-width: 860px) {
+  .browse-body {
+    grid-template-columns: 1fr;
+    padding: 24px 16px 60px;
+    gap: 16px; /* Tighter gap since sidebar is hidden */
+  }
+
+  /* 1. Style the new mobile toggle button */
+  .mobile-filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    background: #0D3D3A; /* Matches your hero/brand color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* 2. Hide the sidebar by default and style it as a dropdown container */
+  .sidebar {
+    display: none; /* Hidden until toggled */
+    flex-direction: column; 
+    gap: 16px;
+    background: #F8F7F4; /* Matches page background */
+    margin-top: -8px; /* Pulls it slightly closer to the button */
+  }
+
+  /* 3. The class that JavaScript will toggle to show the menu */
+  .sidebar.open {
+    display: flex; 
+  }
+
+  .sidebar-section {
+    margin-bottom: 0;
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Adds slight depth to dropdown items */
+  }
+
+  /* Rest of your mobile hero styles */
+  .browse-hero-inner {
+    padding: 0 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .browse-search-wrap {
+    padding: 0 16px;
+  }
+
+  .browse-title {
+    font-size: 20px;
+  }
+
+  .browse-subtitle {
+    margin-left: 0;
+    white-space: normal;
+    line-height: 1.4;
+  }
+}
+
+/* ─── Responsive (Mobile Phones specifically) ───────────────── */
+@media (max-width: 600px) {
+  .featured-grid {
+    grid-template-columns: 1fr; 
   }
 
   .listings-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
   }
-
-  .featured-grid {
-    grid-template-columns: 1fr 1fr;
+  
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }

@@ -22,6 +22,9 @@ export default function Browse() {
   const [listings, setListings] = useState([])
   const [universities, setUniversities] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  // New state for mobile filter dropdown
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
 
   const category = searchParams.get('category') || 'all'
   const search = searchParams.get('search') || ''
@@ -41,7 +44,7 @@ export default function Browse() {
         if (category !== 'all') params.category = category
         if (search) params.search = search
 
-        // University filter logic — clean, no duplication
+        // University filter logic
         if (isAllSelected) {
           // User explicitly clicked "All universities" — show everything
         } else if (selectedUni) {
@@ -63,7 +66,7 @@ export default function Browse() {
       }
     }
     fetchListings()
-  }, [category, search, selectedUni, selectedCity])
+  }, [category, search, selectedUni, selectedCity, user])
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams)
@@ -72,6 +75,9 @@ export default function Browse() {
     if (key === 'university') next.delete('city')
     if (key === 'city') next.delete('university')
     setSearchParams(next)
+    
+    // Auto-close mobile filters when a selection is made
+    setIsMobileFilterOpen(false) 
   }
 
   const clearAll = () => {
@@ -79,6 +85,9 @@ export default function Browse() {
     next.set('university', 'all')
     next.delete('city')
     setSearchParams(next)
+    
+    // Auto-close mobile filters
+    setIsMobileFilterOpen(false)
   }
 
   const cities = [...new Set(universities.map(u => u.city))].sort()
@@ -130,8 +139,16 @@ export default function Browse() {
       {/* ── Body ── */}
       <div className="browse-body">
 
+        {/* Mobile Filter Toggle Button */}
+        <button 
+          className="mobile-filter-btn" 
+          onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+        >
+          {isMobileFilterOpen ? 'Close Filters ▴' : 'Filters & Categories ▾'}
+        </button>
+
         {/* Sidebar */}
-        <aside className="sidebar">
+        <aside className={`sidebar ${isMobileFilterOpen ? 'open' : ''}`}>
 
           {/* Location */}
           <div className="sidebar-section">
